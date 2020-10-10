@@ -4,7 +4,7 @@
 //
 //  Created by 谭真 on 15/12/24.
 //  Copyright © 2015年 谭真. All rights reserved.
-//  version 3.2.0 - 2019.03.02
+//  version 3.4.3 - 2020.09.24
 //  更多信息，请前往项目的github地址：https://github.com/banchichen/TZImagePickerController
 
 /*
@@ -60,6 +60,7 @@
 /// This init method for crop photo / 用这个初始化方法以裁剪图片
 - (instancetype)initCropTypeWithAsset:(id)asset photo:(UIImage *)photo completion:(void (^)(UIImage *cropImage,id asset))completion mainColor:(UIColor *)mainColor;
 
+
 #pragma mark -
 /// Default is 9 / 默认最大可选9张图片
 @property (nonatomic, assign) NSInteger maxImagesCount;
@@ -67,6 +68,10 @@
 /// The minimum count photos user must pick, Default is 0
 /// 最小照片必选张数,默认是0
 @property (nonatomic, assign) NSInteger minImagesCount;
+
+/// If the user does not select any pictures, the current picture is automatically selected when the Finish button is clicked,  Default is YES
+/// 如果用户未选择任何图片，在点击完成按钮时自动选中当前图片，默认YES
+@property (nonatomic, assign) BOOL autoSelectCurrentWhenDone;
 
 /// Always enale the done button, not require minimum 1 photo be picked
 /// 让完成按钮一直可以点击，无须最少选择一张图片
@@ -76,7 +81,8 @@
 /// 对照片排序，按修改时间升序，默认是YES。如果设置为NO,最新的照片会显示在最前面，内部的拍照按钮会排在第一个
 @property (nonatomic, assign) BOOL sortAscendingByModificationDate;
 
-/// The pixel width of output image, Default is 828px / 导出图片的宽度，默认828像素宽
+/// The pixel width of output image, Default is 828px，you need to set photoPreviewMaxWidth at the same time
+/// 导出图片的宽度，默认828像素宽，你需要同时设置photoPreviewMaxWidth的值
 @property (nonatomic, assign) CGFloat photoWidth;
 
 /// Default is 600px / 默认600像素宽
@@ -179,6 +185,7 @@
 /// 单选模式,maxImagesCount为1时才生效
 @property (nonatomic, assign) BOOL showSelectBtn;        ///< 在单选模式下，照片列表页中，显示选择按钮,默认为NO
 @property (nonatomic, assign) BOOL allowCrop;            ///< 允许裁剪,默认为YES，showSelectBtn为NO才生效
+@property (nonatomic, assign) BOOL scaleAspectFillCrop;  ///< 是否图片等比缩放填充cropRect区域
 @property (nonatomic, assign) CGRect cropRect;           ///< 裁剪框的尺寸
 @property (nonatomic, assign) CGRect cropRectPortrait;   ///< 裁剪框的尺寸(竖屏)
 @property (nonatomic, assign) CGRect cropRectLandscape;  ///< 裁剪框的尺寸(横屏)
@@ -192,6 +199,7 @@
 @property (nonatomic, copy) void (^photoPreviewPageUIConfigBlock)(UICollectionView *collectionView, UIView *naviBar, UIButton *backButton, UIButton *selectButton, UILabel *indexLabel, UIView *toolBar, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel);
 @property (nonatomic, copy) void (^videoPreviewPageUIConfigBlock)(UIButton *playButton, UIView *toolBar, UIButton *doneButton);
 @property (nonatomic, copy) void (^gifPreviewPageUIConfigBlock)(UIView *toolBar, UIButton *doneButton);
+@property (nonatomic, copy) void (^albumPickerPageUIConfigBlock)(UITableView *tableView);
 @property (nonatomic, copy) void (^assetCellDidSetModelBlock)(TZAssetCell *cell, UIImageView *imageView, UIImageView *selectImageView, UILabel *indexLabel, UIView *bottomView, UILabel *timeLength, UIImageView *videoImgView);
 @property (nonatomic, copy) void (^albumCellDidSetModelBlock)(TZAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel);
 /// 【自定义各页面/组件的frame】在界面viewDidLayoutSubviews/组件layoutSubviews后调用，允许外界修改frame等
@@ -199,6 +207,7 @@
 @property (nonatomic, copy) void (^photoPreviewPageDidLayoutSubviewsBlock)(UICollectionView *collectionView, UIView *naviBar, UIButton *backButton, UIButton *selectButton, UILabel *indexLabel, UIView *toolBar, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel);
 @property (nonatomic, copy) void (^videoPreviewPageDidLayoutSubviewsBlock)(UIButton *playButton, UIView *toolBar, UIButton *doneButton);
 @property (nonatomic, copy) void (^gifPreviewPageDidLayoutSubviewsBlock)(UIView *toolBar, UIButton *doneButton);
+@property (nonatomic, copy) void (^albumPickerPageDidLayoutSubviewsBlock)(UITableView *tableView);
 @property (nonatomic, copy) void (^assetCellDidLayoutSubviewsBlock)(TZAssetCell *cell, UIImageView *imageView, UIImageView *selectImageView, UILabel *indexLabel, UIView *bottomView, UILabel *timeLength, UIImageView *videoImgView);
 @property (nonatomic, copy) void (^albumCellDidLayoutSubviewsBlock)(TZAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel);
 /// 自定义各页面/组件的frame】刷新底部状态(refreshNaviBarAndBottomBarState)使用的
@@ -396,7 +405,6 @@ typedef void (^VoidBlock)(void);
 - (void)configTableView;
 @end
 
-
 @interface UIImage (MyBundle)
 + (UIImage *)tz_imageNamedFromMyBundle:(NSString *)name;
 @end
@@ -408,6 +416,10 @@ typedef void (^VoidBlock)(void);
 // 获得Info.plist数据字典
 + (NSDictionary *)tz_getInfoDictionary;
 + (BOOL)tz_isRightToLeftLayout;
+
++ (void)configBarButtonItem:(UIBarButtonItem *)item tzImagePickerVc:(TZImagePickerController *)tzImagePickerVc;
++ (BOOL)isICloudSyncError:(NSError *)error;
+
 @end
 
 

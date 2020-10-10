@@ -45,6 +45,7 @@
 @property (nonatomic, strong) UIView *navBarSpLine;
 
 @property (strong, nonatomic) UIAlertController *alertView;
+@property (nonatomic, strong) UIView *iCloudErrorView;
 @end
 
 @implementation TZPhotoPreviewController
@@ -80,6 +81,7 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self.navigationController setNavigationBarHidden:YES animated:YES];
+    [UIApplication sharedApplication].statusBarHidden = YES;
     if (_currentIndex) {
         [_collectionView setContentOffset:CGPointMake((self.view.tz_width + 20) * self.currentIndex, 0) animated:NO];
     }
@@ -89,6 +91,10 @@
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
+    if (tzImagePickerVc.needShowStatusBar) {
+        [UIApplication sharedApplication].statusBarHidden = NO;
+    }
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
     [TZImageManager manager].shouldFixOrientation = NO;
     [self.navigationController setNavigationBarHidden:NO animated:YES];
 }
@@ -104,13 +110,32 @@
     _naviBar.backgroundColor = [TZCutomColor whiteColor];
     
     _backButton = [[UIButton alloc] initWithFrame:CGRectZero];
+
     if (tzImagePickerVc.backImage) {
         [_backButton setImage:tzImagePickerVc.backImage forState:UIControlStateNormal];
     } else {
         [_backButton setImage:[UIImage tz_imageNamedFromMyBundle:@"topbar_back"] forState:UIControlStateNormal];
     }
-    [_backButton setTitleColor:[TZCutomColor whiteColor] forState:UIControlStateNormal];
+    [_backButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [_backButton addTarget:self action:@selector(backButtonClick) forControlEvents:UIControlEventTouchUpInside];
+    
+    _selectButton = [[UIButton alloc] initWithFrame:CGRectZero];
+    [_selectButton setImage:tzImagePickerVc.photoDefImage forState:UIControlStateNormal];
+    [_selectButton setImage:tzImagePickerVc.photoSelImage forState:UIControlStateSelected];
+    _selectButton.imageView.clipsToBounds = YES;
+    _selectButton.imageEdgeInsets = UIEdgeInsetsMake(10, 0, 10, 0);
+    _selectButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+    [_selectButton addTarget:self action:@selector(select:) forControlEvents:UIControlEventTouchUpInside];
+    _selectButton.hidden = !tzImagePickerVc.showSelectBtn;
+    
+    _indexLabel = [[UILabel alloc] init];
+    _indexLabel.adjustsFontSizeToFitWidth = YES;
+    _indexLabel.font = [UIFont systemFontOfSize:14];
+    _indexLabel.textColor = [UIColor whiteColor];
+    _indexLabel.textAlignment = NSTextAlignmentCenter;
+    
+    [_naviBar addSubview:_selectButton];
+    [_naviBar addSubview:_indexLabel];
     [_naviBar addSubview:_backButton];
     self.navBarSpLine = [[UIView alloc]initWithFrame:CGRectMake(0, _naviBar.frame.size.height - 0.5, _naviBar.frame.size.width, 0.5)];
     CGFloat rgb2 = 235 / 255.0;
@@ -144,6 +169,7 @@
 //        _originalPhotoLabel.backgroundColor = [UIColor clearColor];
 //        if (_isSelectOriginalPhoto) [self showPhotoBytes];
 //    }
+
     
     _selectButton = [[UIButton alloc] initWithFrame:CGRectMake(10, (_toolBar.tz_height - 42) / 2.0, 55, 42)];
     if (_tzImagePickerVc.previewSelectBtnDefImage) {
@@ -192,6 +218,7 @@
 //    _numberLabel.text = [NSString stringWithFormat:@"%zd",_tzImagePickerVc.selectedModels.count];
 //    _numberLabel.hidden = _tzImagePickerVc.selectedModels.count <= 0;
 //    _numberLabel.backgroundColor = [UIColor clearColor];
+
     
     [_originalPhotoButton addSubview:_originalPhotoLabel];
     [_toolBar addSubview:_doneButton];
@@ -202,7 +229,6 @@
     self.toolBarSpLine.backgroundColor = [TZCutomColor toobarColor];
     [_toolBar addSubview: self.toolBarSpLine];
     [self.view addSubview:_toolBar];
-
     if (_tzImagePickerVc.photoPreviewPageUIConfigBlock) {
         _tzImagePickerVc.photoPreviewPageUIConfigBlock(_collectionView, _naviBar, _backButton, _selectButton, _indexLabel, _toolBar, _originalPhotoButton, _originalPhotoLabel, _doneButton, _numberImageView, _numberLabel);
     }
@@ -265,12 +291,14 @@
     [super viewDidLayoutSubviews];
     TZImagePickerController *_tzImagePickerVc = (TZImagePickerController *)self.navigationController;
     
-    CGFloat statusBarHeight = [TZCommonTools tz_statusBarHeight];
-    CGFloat statusBarHeightInterval = statusBarHeight;
+    BOOL isFullScreen = self.view.tz_height == [UIScreen mainScreen].bounds.size.height;
+    CGFloat statusBarHeight = isFullScreen ? [TZCommonTools tz_statusBarHeight] : 0;
+    CGFloat statusBarHeightInterval = isFullScreen ? (statusBarHeight - 20) : 0;
     CGFloat naviBarHeight = statusBarHeight + _tzImagePickerVc.navigationBar.tz_height;
     _naviBar.frame = CGRectMake(0, 0, self.view.tz_width, naviBarHeight);
-    self.navBarSpLine.frame = CGRectMake(0, _naviBar.frame.size.height - 0.5, _naviBar.frame.size.width, 0.5);
+    _indexLabel.frame = _selectButton.frame;
     _backButton.frame = CGRectMake(0, statusBarHeightInterval, 44, 44);
+
     _layout.itemSize = CGSizeMake(self.view.tz_width + 20, self.view.tz_height);
     _layout.minimumInteritemSpacing = 0;
     _layout.minimumLineSpacing = 0;
@@ -293,15 +321,16 @@
 //        _originalPhotoLabel.frame = CGRectMake(fullImageWidth + 42, 0, 80, 44);
 //    }
     _doneButton.frame = CGRectMake(self.view.tz_width - 70 - 9, 5, 70, 30);
+    _doneButton.tz_centerY = _toolBar.tz_height / 2.0;
     _selectButton.tz_centerY = _doneButton.tz_centerY;
     _doneButton.layer.cornerRadius = 4;
-    _doneButton.tz_centerY = _toolBar.tz_height / 2.0;
     _numberImageView.frame = CGRectMake(_doneButton.tz_left - 30 - 2, 7, 30, 30);
     _numberLabel.frame = _numberImageView.frame;
     self.toolBarSpLine.frame = CGRectMake(0, 0, _naviBar.frame.size.width, 0.5);
 
     [self configCropView];
     [self updateDoneBtnSize];
+
     if (_tzImagePickerVc.photoPreviewPageDidLayoutSubviewsBlock) {
         _tzImagePickerVc.photoPreviewPageDidLayoutSubviewsBlock(_collectionView, _naviBar, _backButton, _selectButton, _indexLabel, _toolBar, _originalPhotoButton, _originalPhotoLabel, _doneButton, _numberImageView, _numberLabel);
     }
@@ -466,7 +495,6 @@
         _currentIndex = currentIndex;
         [self refreshNaviBarAndBottomBarState];
     }
-    
     [[NSNotificationCenter defaultCenter] postNotificationName:@"photoPreviewCollectionViewDidScroll" object:nil];
 }
 
@@ -484,13 +512,26 @@
     __weak typeof(self) weakSelf = self;
     if (_tzImagePickerVc.allowPickingMultipleVideo && model.type == TZAssetModelMediaTypeVideo) {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZVideoPreviewCell" forIndexPath:indexPath];
+        TZVideoPreviewCell *currentCell = (TZVideoPreviewCell *)cell;
+        currentCell.iCloudSyncFailedHandle = ^(id asset, BOOL isSyncFailed) {
+            model.iCloudFailed = isSyncFailed;
+            [weakSelf didICloudSyncStatusChanged:model];
+            [weakSelf.models replaceObjectAtIndex:indexPath.item withObject:model];
+        };
     } else if (_tzImagePickerVc.allowPickingMultipleVideo && model.type == TZAssetModelMediaTypePhotoGif && _tzImagePickerVc.allowPickingGif) {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZGifPreviewCell" forIndexPath:indexPath];
+        TZGifPreviewCell *currentCell = (TZGifPreviewCell *)cell;
+        currentCell.previewView.iCloudSyncFailedHandle = ^(id asset, BOOL isSyncFailed) {
+            model.iCloudFailed = isSyncFailed;
+            [weakSelf didICloudSyncStatusChanged:model];
+            [weakSelf.models replaceObjectAtIndex:indexPath.item withObject:model];
+        };
     } else {
         cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZPhotoPreviewCell" forIndexPath:indexPath];
         TZPhotoPreviewCell *photoPreviewCell = (TZPhotoPreviewCell *)cell;
         photoPreviewCell.cropRect = _tzImagePickerVc.cropRect;
         photoPreviewCell.allowCrop = _tzImagePickerVc.allowCrop;
+        photoPreviewCell.scaleAspectFillCrop = _tzImagePickerVc.scaleAspectFillCrop;
         __weak typeof(_tzImagePickerVc) weakTzImagePickerVc = _tzImagePickerVc;
         __weak typeof(_collectionView) weakCollectionView = _collectionView;
         __weak typeof(photoPreviewCell) weakCell = photoPreviewCell;
@@ -509,6 +550,11 @@
                 }
             }
         }];
+        photoPreviewCell.previewView.iCloudSyncFailedHandle = ^(id asset, BOOL isSyncFailed) {
+            model.iCloudFailed = isSyncFailed;
+            [weakSelf didICloudSyncStatusChanged:model];
+            [weakSelf.models replaceObjectAtIndex:indexPath.item withObject:model];
+        };
     }
     
     cell.model = model;
@@ -516,6 +562,7 @@
         __strong typeof(weakSelf) strongSelf = weakSelf;
         [strongSelf didTapPreviewCell];
     }];
+
     return cell;
 }
 
@@ -539,6 +586,7 @@
 #pragma mark - Private Method
 
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     // NSLog(@"%@ dealloc",NSStringFromClass(self.class));
 }
 - (void)updateDoneBtnSize {
@@ -597,7 +645,8 @@
         _originalPhotoLabel.hidden = YES;
         _doneButton.hidden = YES;
     }
-    
+    // iCloud同步失败的UI刷新
+    [self didICloudSyncStatusChanged:model];
     if (_tzImagePickerVc.photoPreviewPageDidRefreshStateBlock) {
         _tzImagePickerVc.photoPreviewPageDidRefreshStateBlock(_collectionView, _naviBar, _backButton, _selectButton, _indexLabel, _toolBar, _originalPhotoButton, _originalPhotoLabel, _doneButton, _numberImageView, _numberLabel);
     }
@@ -610,6 +659,25 @@
         } else {
             self->_selectButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         }
+    });
+}
+
+- (void)didICloudSyncStatusChanged:(TZAssetModel *)model{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        TZImagePickerController *_tzImagePickerVc = (TZImagePickerController *)self.navigationController;
+        // onlyReturnAsset为NO时,依赖TZ返回大图,所以需要有iCloud同步失败的提示,并且不能选择,
+        if (_tzImagePickerVc.onlyReturnAsset) {
+            return;
+        }
+        TZAssetModel *currentModel = self.models[self.currentIndex];
+        if (_tzImagePickerVc.selectedModels.count <= 0) {
+            self->_doneButton.enabled = !currentModel.iCloudFailed;
+        } else {
+            self->_doneButton.enabled = YES;
+        }
+        self->_selectButton.hidden = currentModel.iCloudFailed || !_tzImagePickerVc.showSelectBtn;
+        self->_originalPhotoButton.hidden = currentModel.iCloudFailed;
+        self->_originalPhotoLabel.hidden = currentModel.iCloudFailed;
     });
 }
 
