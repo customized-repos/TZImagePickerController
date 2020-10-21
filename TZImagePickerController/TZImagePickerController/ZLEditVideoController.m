@@ -622,7 +622,7 @@
     PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
     /// 设置为当前版本，包含用户编辑后信息，比如滤镜
     options.version = PHVideoRequestOptionsVersionCurrent;
-    options.deliveryMode = PHVideoRequestOptionsDeliveryModeAutomatic;
+    options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
     options.networkAccessAllowed = YES;
     [[PHImageManager defaultManager] requestAVAssetForVideo:self.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
         NSLog(@"requestAVAssetForVideo asset-%@ -%@", asset, info);
