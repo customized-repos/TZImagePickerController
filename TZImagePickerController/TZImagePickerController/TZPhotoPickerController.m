@@ -21,7 +21,7 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "TZImageRequestOperation.h"
 
-@interface TZPhotoPickerController ()<UICollectionViewDataSource,UICollectionViewDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate, PHPhotoLibraryChangeObserver> {
+@interface TZPhotoPickerController ()<UICollectionViewDataSource,UICollectionViewDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate, PHPhotoLibraryChangeObserver, LZImageCroppingDelegate> {
     NSMutableArray *_models;
     
     UIView *_bottomToolBar;
@@ -1019,7 +1019,12 @@ static CGFloat itemMargin = 5;
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     // [self updateCachedAssets];
 }
-
+-(void)lzImageCropping:(LZImageCropping *)cropping didCropImage:(UIImage *)image {
+    TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
+    if ([tzImagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishPickingPhotos:sourceAssets:isSelectOriginalPhoto:)]) {
+        [tzImagePickerVc.pickerDelegate imagePickerController:tzImagePickerVc didFinishPickingPhotos:@[image] sourceAssets:@[] isSelectOriginalPhoto:_isSelectOriginalPhoto];
+    }
+}
 #pragma mark - Private Method
 
 /// 拍照按钮点击事件

@@ -340,7 +340,7 @@
     [self.customNav addSubview:titleLab];
     titleLab.center = CGPointMake(self.customNav.frame.size.width / 2.0, backBtn.center.y);
     /// 确定按钮
-    UIButton *sureBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.customNav.frame.size.width - 50, 20, 50, 22)];
+    UIButton *sureBtn = [[UIButton alloc]initWithFrame:CGRectMake(self.customNav.frame.size.width - 50, 10, 50, 44)];
     [sureBtn setTitle:@"完成" forState:UIControlStateNormal];
     sureBtn.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16];
     [sureBtn addTarget:self action:@selector(rightButtonClick:) forControlEvents:UIControlEventTouchUpInside];
