@@ -756,36 +756,78 @@ static CGFloat itemMargin = 5;
             VoidBlock disableBlock = ^{
                 NSLog(@"当前操作不可用");
             };
-            if (tzImagePickerVc.exportVideoMode == TSExportVideoModeEditExport) {
-                /// 仅编辑
-                editBlock();
-            } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickNoLimitTimeExport) {
-                /// 仅不限时长快速上传
-                quickUploadBlock();
-            } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickLimitTimeExport) {
-                /// 仅限制时的快速上传，需要再判断时长
-                if (model.asset.duration <= tzImagePickerVc.couldQuickExportVideoMaxSeconds) {
+            VoidBlock exportBlock = ^{
+                if (tzImagePickerVc.exportVideoMode == TSExportVideoModeEditExport) {
+                    /// 仅编辑
+                    editBlock();
+                } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickNoLimitTimeExport) {
+                    /// 仅不限时长快速上传
                     quickUploadBlock();
-                } else {
-                    if (canRespondsCustomAlert) {
-                        [tzImagePickerVc.pickerDelegate selectedVideoShowCustomAlertTitle:@"温馨提示" message:@"仅支持%@内视频"];
+                } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickLimitTimeExport) {
+                    /// 仅限制时的快速上传，需要再判断时长
+                    if (model.asset.duration <= tzImagePickerVc.couldQuickExportVideoMaxSeconds) {
+                        quickUploadBlock();
                     } else {
-                        /// 超过视频长度弹窗提示
-                        UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:[NSString stringWithFormat:@"仅支持%@内视频", quickUpdateTimeNotice] preferredStyle:UIAlertControllerStyleAlert];
-                        UIAlertAction *sureAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                        }];
-                        [alertVC addAction:sureAction];
-                        [self presentViewController:alertVC animated:YES completion:nil];
+                        if (canRespondsCustomAlert) {
+                            [tzImagePickerVc.pickerDelegate selectedVideoShowCustomAlertTitle:@"温馨提示" message:@"仅支持%@内视频"];
+                        } else {
+                            /// 超过视频长度弹窗提示
+                            UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:[NSString stringWithFormat:@"仅支持%@内视频", quickUpdateTimeNotice] preferredStyle:UIAlertControllerStyleAlert];
+                            UIAlertAction *sureAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                            }];
+                            [alertVC addAction:sureAction];
+                            [self presentViewController:alertVC animated:YES completion:nil];
+                        }
                     }
-                }
-            } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickLimitTimeAndEditExport) {
-                /// 限时快速上传+编辑后上传同时有，需要再判断时长
-                if (model.asset.duration <= tzImagePickerVc.couldQuickExportVideoMaxSeconds) {
+                } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickLimitTimeAndEditExport) {
+                    /// 限时快速上传+编辑后上传同时有，需要再判断时长
+                    if (model.asset.duration <= tzImagePickerVc.couldQuickExportVideoMaxSeconds) {
+                        if (canRespondsCustomActionSheet){
+                            [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[[NSString stringWithFormat:@"快速上传(支持%@以内)", quickUpdateTimeNotice], @"编辑后上传"] quickUploadBlock:quickUploadBlock editBlock:editBlock];
+                        } else {
+                            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
+                            UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"快速上传(支持%@以内)", quickUpdateTimeNotice] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                                quickUploadBlock();
+                            }];
+                            UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                                editBlock();
+                            }];
+                            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                                NSLog(@"cancel");
+                            }];
+                            [alertController addAction:uploadAction];
+                            [alertController addAction:editAction];
+                            [alertController addAction:cancelAction];
+                            [self presentViewController:alertController animated:YES completion:nil];
+                        }
+                    } else {
+                        if (canRespondsCustomActionSheet){
+                            [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[[NSString stringWithFormat:@"快速上传(超过%@不可用)", quickUpdateTimeNotice], @"编辑后上传"] quickUploadBlock:disableBlock editBlock:editBlock];
+                        } else {
+                            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
+                            UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"快速上传(超过%@不可用)", quickUpdateTimeNotice] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                                disableBlock();
+                            }];
+                            UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                                editBlock();
+                            }];
+                            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                                NSLog(@"cancel");
+                            }];
+                            [alertController addAction:uploadAction];
+                            [alertController addAction:editAction];
+                            [alertController addAction:cancelAction];
+                            [self presentViewController:alertController animated:YES completion:nil];
+                        }
+                    }
+                        
+                } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickNoLimitTimeAndEditExport) {
+                    /// 不限时快速上传+编辑
                     if (canRespondsCustomActionSheet){
-                        [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[[NSString stringWithFormat:@"快速上传(支持%@以内)", quickUpdateTimeNotice], @"编辑后上传"] quickUploadBlock:quickUploadBlock editBlock:editBlock];
+                        [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[@"快速上传", @"编辑后上传"] quickUploadBlock:quickUploadBlock editBlock:editBlock];
                     } else {
                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
-                        UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"快速上传(支持%@以内)", quickUpdateTimeNotice] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                        UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:@"快速上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                             quickUploadBlock();
                         }];
                         UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
@@ -799,48 +841,29 @@ static CGFloat itemMargin = 5;
                         [alertController addAction:cancelAction];
                         [self presentViewController:alertController animated:YES completion:nil];
                     }
-                } else {
-                    if (canRespondsCustomActionSheet){
-                        [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[[NSString stringWithFormat:@"快速上传(超过%@不可用)", quickUpdateTimeNotice], @"编辑后上传"] quickUploadBlock:disableBlock editBlock:editBlock];
-                    } else {
-                        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
-                        UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"快速上传(超过%@不可用)", quickUpdateTimeNotice] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                            disableBlock();
-                        }];
-                        UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                            editBlock();
-                        }];
-                        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                }
+            };
+        
+            /// 判断当前视频资源是否可用
+            PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
+            options.deliveryMode = PHVideoRequestOptionsDeliveryModeFastFormat;
+            options.networkAccessAllowed = NO;
+            [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                NSLog(@"%@", info);
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if ([info objectForKey:PHImageResultIsInCloudKey]) {
+                        UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:@"该视频存储在iCloud，请在相册中下载完毕后重试。" preferredStyle:UIAlertControllerStyleAlert];
+
+                        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
                             NSLog(@"cancel");
                         }];
-                        [alertController addAction:uploadAction];
-                        [alertController addAction:editAction];
-                        [alertController addAction:cancelAction];
-                        [self presentViewController:alertController animated:YES completion:nil];
+                        [alertVC addAction:cancelAction];
+                        [self presentViewController:alertVC animated:YES completion:nil];
+                    } else {
+                        exportBlock();
                     }
-                }
-                    
-            } else if(tzImagePickerVc.exportVideoMode == TSExportVideoModeQuickNoLimitTimeAndEditExport) {
-                /// 不限时快速上传+编辑
-                if (canRespondsCustomActionSheet){
-                    [tzImagePickerVc.pickerDelegate selectedVideoShowCustomActionSheet:@"温馨提示" actionTitles:@[@"快速上传", @"编辑后上传"] quickUploadBlock:quickUploadBlock editBlock:editBlock];
-                } else {
-                    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
-                    UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:@"快速上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                        quickUploadBlock();
-                    }];
-                    UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                        editBlock();
-                    }];
-                    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                        NSLog(@"cancel");
-                    }];
-                    [alertController addAction:uploadAction];
-                    [alertController addAction:editAction];
-                    [alertController addAction:cancelAction];
-                    [self presentViewController:alertController animated:YES completion:nil];
-                }
-            }
+                });
+            }];
         }
     } else if (model.type == TZAssetModelMediaTypePhotoGif && tzImagePickerVc.allowPickingGif && !tzImagePickerVc.allowPickingMultipleVideo) {
         if (tzImagePickerVc.selectedModels.count > 0) {
