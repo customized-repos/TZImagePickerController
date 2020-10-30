@@ -860,6 +860,11 @@ static CGFloat itemMargin = 5;
             TZAssetModel *asset = _models[index];
             TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
             [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info) {
+                BOOL isDegraded = [info[@"PHImageResultIsDegradedKey"] boolValue];
+                /// 低分辨率不跳转
+                if (isDegraded) {
+                    return;
+                }
                 LZImageCropping *imageBrowser = [[LZImageCropping alloc]init];
                 TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
                 //设置代理
