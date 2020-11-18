@@ -493,17 +493,21 @@
                 CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(812, 375))||CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(414, 896)) ||
                 CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(896, 414)));
     }
-    /// iPhoneX "iPhone10,3" "iPhone10,6"
-      /// iPhoneXs "iPhone11,2"
-      /// iPhoneXs Max "iPhone11,6"
-      /// iPhoneXR "iPhone11,8"
-      /// iPhone 11 "iPhone12,1"
-      /// iPhone 11 Pro "iPhone12,3"
-      /// iPhone 11 Pro Max "iPhone12,5"
-      BOOL isIPhoneX = [platform isEqualToString:@"iPhone10,3"] || [platform isEqualToString:@"iPhone10,6"]
-      || [platform isEqualToString:@"iPhone11,2"] || [platform isEqualToString:@"iPhone11,6"] || [platform isEqualToString:@"iPhone11,8"]
-      || [platform isEqualToString:@"iPhone12,1"] || [platform isEqualToString:@"iPhone12,3"] || [platform isEqualToString:@"iPhone12,5"]
-      ;
+        /// iPhoneX "iPhone10,3" "iPhone10,6"
+        /// iPhoneXs "iPhone11,2"
+        /// iPhoneXs Max "iPhone11,6"
+        /// iPhoneXR "iPhone11,8"
+        /// iPhone 11 "iPhone12,1"
+        /// iPhone 11 Pro "iPhone12,3"
+        /// iPhone 11 Pro Max "iPhone12,5"
+        /// iPhone 12 mini "iPhone13,1"
+        /// iPhone 12 "iPhone13,2"
+        /// iPhone 12 pro "iPhone13,3"
+        /// iPhone 12 max "iPhone13,4"
+    BOOL isIPhoneX = [platform isEqualToString:@"iPhone10,3"] || [platform isEqualToString:@"iPhone10,6"]
+    || [platform isEqualToString:@"iPhone11,2"] || [platform isEqualToString:@"iPhone11,6"] || [platform isEqualToString:@"iPhone11,8"]
+    || [platform isEqualToString:@"iPhone12,1"] || [platform isEqualToString:@"iPhone12,3"] || [platform isEqualToString:@"iPhone12,5"]
+    || [platform isEqualToString:@"iPhone13,1"] || [platform isEqualToString:@"iPhone13,2"] || [platform isEqualToString:@"iPhone13,3"] || [platform isEqualToString:@"iPhone13,4"];
     return isIPhoneX;
 }
 

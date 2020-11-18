@@ -388,10 +388,14 @@
     /// iPhone 11 "iPhone12,1"
     /// iPhone 11 Pro "iPhone12,3"
     /// iPhone 11 Pro Max "iPhone12,5"
+    /// iPhone 12 mini "iPhone13,1"
+    /// iPhone 12 "iPhone13,2"
+    /// iPhone 12 pro "iPhone13,3"
+    /// iPhone 12 max "iPhone13,4"
     BOOL isIPhoneX = [platform isEqualToString:@"iPhone10,3"] || [platform isEqualToString:@"iPhone10,6"]
     || [platform isEqualToString:@"iPhone11,2"] || [platform isEqualToString:@"iPhone11,6"] || [platform isEqualToString:@"iPhone11,8"]
     || [platform isEqualToString:@"iPhone12,1"] || [platform isEqualToString:@"iPhone12,3"] || [platform isEqualToString:@"iPhone12,5"]
-    ;
+    || [platform isEqualToString:@"iPhone13,1"] || [platform isEqualToString:@"iPhone13,2"] || [platform isEqualToString:@"iPhone13,3"] || [platform isEqualToString:@"iPhone13,4"];
     return isIPhoneX;
 }
 // 获取当前选中的时间点
