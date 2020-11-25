@@ -485,13 +485,24 @@
     uname(&systemInfo);
     NSString *platform = [NSString stringWithCString:systemInfo.machine encoding:NSASCIIStringEncoding];
     if ([platform isEqualToString:@"i386"] || [platform isEqualToString:@"x86_64"]) {
-        // 模拟器下采用屏幕的高度来判断
-        // iPhoneX, iPhoneXs CGSizeMake(375, 812)
+        // 模拟器根据屏幕尺寸判断
+        // iPhoneX, iPhoneXs, iPhone12SE CGSizeMake(375, 812)
         // iPhoneXs Max, iPhoneXR CGSize(width: 414, height: 896)
-        
-        return (CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(375, 812)) ||
-                CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(812, 375))||CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(414, 896)) ||
-                CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(896, 414)));
+        // iPhone12 iPhone12 Pro CGSize(width: 390, height: 844)
+        // iPhone12 MAX CGSize(width: 428, height: 926)
+        if (CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(375, 812)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(812, 375)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(414, 896)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(896, 414)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(390, 844)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(844, 390)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(428, 926)) ||
+            CGSizeEqualToSize([UIScreen mainScreen].bounds.size, CGSizeMake(926, 428))
+            ) {
+            return  YES;
+        } else {
+            return  NO;
+        }
     }
         /// iPhoneX "iPhone10,3" "iPhone10,6"
         /// iPhoneXs "iPhone11,2"
