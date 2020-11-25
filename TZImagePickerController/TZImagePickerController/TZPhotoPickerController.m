@@ -111,7 +111,13 @@ static CGFloat itemMargin = 5;
     UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
     backBtnItem.title = @"";
     self.navigationItem.backBarButtonItem = backBtnItem;
-    _showTakePhotoBtn = (_model.isCameraRoll && tzImagePickerVc.allowTakePicture);
+    if (_model.isCameraRoll) {
+        if (tzImagePickerVc.allowPickingImage && tzImagePickerVc.allowTakePicture) {
+            _showTakePhotoBtn = YES;
+        } else if(tzImagePickerVc.allowPickingVideo && tzImagePickerVc.allowTakeVideo) {
+            _showTakePhotoBtn = YES;
+        }
+    }
     /// 通过调整返回按钮X轴偏移量,把title移到屏幕外,实现隐藏返回按钮标题的效果
     [[UIBarButtonItem appearance] setBackButtonTitlePositionAdjustment:UIOffsetMake(-100, 0)
                                                          forBarMetrics:UIBarMetricsDefault];
