@@ -855,13 +855,36 @@ static CGFloat itemMargin = 5;
             options.deliveryMode = PHVideoRequestOptionsDeliveryModeFastFormat;
             options.networkAccessAllowed = NO;
             [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-                NSLog(@"%@", info);
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if ([info objectForKey:PHImageResultIsInCloudKey]) {
-                        UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:@"该视频存储在iCloud，请在相册中下载完毕后重试。" preferredStyle:UIAlertControllerStyleAlert];
-
-                        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"好" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                            NSLog(@"cancel");
+                        UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:@"温馨提示" message:@"当前视频存储于iCloud，需下载后继续操作。下载可能需要较长时间。" preferredStyle:UIAlertControllerStyleAlert];
+                        UIAlertAction *nextAction = [UIAlertAction actionWithTitle:@"下载" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                            [tzImagePickerVc showProgressHUD];
+                            // 禁止用户操作
+                            tzImagePickerVc.view.userInteractionEnabled = NO;
+                            
+                            PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
+                            /// 设置为当前版本，包含用户编辑后信息，比如滤镜
+                            options.version = PHVideoRequestOptionsVersionCurrent;
+                            options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+                            options.networkAccessAllowed = YES;
+                            [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                    if (asset != nil) {
+                                        tzImagePickerVc.view.userInteractionEnabled = YES;
+                                        [tzImagePickerVc hideProgressHUD];
+                                        exportBlock();
+                                    } else {
+                                        tzImagePickerVc.view.userInteractionEnabled = YES;
+                                        [tzImagePickerVc hideProgressHUD];
+                                        [tzImagePickerVc showAlertWithTitle:@"下载失败，请重试"];
+                                    }
+                                });
+                            }];
+                        }];
+                        [alertVC addAction:nextAction];
+                        
+                        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
                         }];
                         [alertVC addAction:cancelAction];
                         [self presentViewController:alertVC animated:YES completion:nil];
