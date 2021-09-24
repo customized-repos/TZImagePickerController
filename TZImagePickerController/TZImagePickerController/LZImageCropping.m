@@ -504,21 +504,31 @@
             return  NO;
         }
     }
-        /// iPhoneX "iPhone10,3" "iPhone10,6"
-        /// iPhoneXs "iPhone11,2"
-        /// iPhoneXs Max "iPhone11,6"
-        /// iPhoneXR "iPhone11,8"
-        /// iPhone 11 "iPhone12,1"
-        /// iPhone 11 Pro "iPhone12,3"
-        /// iPhone 11 Pro Max "iPhone12,5"
-        /// iPhone 12 mini "iPhone13,1"
-        /// iPhone 12 "iPhone13,2"
-        /// iPhone 12 pro "iPhone13,3"
-        /// iPhone 12 max "iPhone13,4"
+    /// iPhoneX "iPhone10,3" "iPhone10,6"
+    /// iPhoneXs "iPhone11,2"
+    /// iPhoneXs Max "iPhone11,6"
+    /// iPhoneXR "iPhone11,8"
+    /// iPhone 11 "iPhone12,1"
+    /// iPhone 11 Pro "iPhone12,3"
+    /// iPhone 11 Pro Max "iPhone12,5"
+    /// iPhone 12 mini "iPhone13,1"
+    /// iPhone 12 "iPhone13,2"
+    /// iPhone 12 pro "iPhone13,3"
+    /// iPhone 12 max "iPhone13,4"
+
+    /// iPhone 13 mini iPhone14,4
+    /// iPhone 13 iPhone14,5
+    /// iPhone 13 Pro iPhone14,2
+    /// iPhone 13 Pro Max iPhone14,3
     BOOL isIPhoneX = [platform isEqualToString:@"iPhone10,3"] || [platform isEqualToString:@"iPhone10,6"]
     || [platform isEqualToString:@"iPhone11,2"] || [platform isEqualToString:@"iPhone11,6"] || [platform isEqualToString:@"iPhone11,8"]
     || [platform isEqualToString:@"iPhone12,1"] || [platform isEqualToString:@"iPhone12,3"] || [platform isEqualToString:@"iPhone12,5"]
-    || [platform isEqualToString:@"iPhone13,1"] || [platform isEqualToString:@"iPhone13,2"] || [platform isEqualToString:@"iPhone13,3"] || [platform isEqualToString:@"iPhone13,4"];
+    || [platform isEqualToString:@"iPhone13,1"] || [platform isEqualToString:@"iPhone13,2"] || [platform isEqualToString:@"iPhone13,3"] || [platform isEqualToString:@"iPhone13,4"]
+    || [platform isEqualToString:@"iPhone14,2"]
+    || [platform isEqualToString:@"iPhone14,3"]
+    || [platform isEqualToString:@"iPhone14,4"]
+    || [platform isEqualToString:@"iPhone14,5"]
+    ;
     return isIPhoneX;
 }
 
