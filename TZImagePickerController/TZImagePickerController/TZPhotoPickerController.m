@@ -113,40 +113,19 @@ static CGFloat itemMargin = 5;
         [[UINavigationBar appearance] setBackIndicatorImage:tzImagePickerVc.backImage];
         [[UINavigationBar appearance] setBackIndicatorTransitionMaskImage:tzImagePickerVc.backImage];
     }
- 
-    UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
-    backBtnItem.title = @"";
-    self.navigationItem.backBarButtonItem = backBtnItem;
-    if (_model.isCameraRoll) {
-        if (tzImagePickerVc.allowPickingImage && tzImagePickerVc.allowTakePicture) {
-            _showTakePhotoBtn = YES;
-        } else if(tzImagePickerVc.allowPickingVideo && tzImagePickerVc.allowTakeVideo) {
-            _showTakePhotoBtn = YES;
-        }
+
+    if (tzImagePickerVc.navLeftBarButtonSettingBlock) {
+        UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        leftButton.frame = CGRectMake(0, 0, 44, 44);
+        [leftButton addTarget:self action:@selector(navLeftBarButtonClick) forControlEvents:UIControlEventTouchUpInside];
+        tzImagePickerVc.navLeftBarButtonSettingBlock(leftButton);
+        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+    } else if (tzImagePickerVc.childViewControllers.count) {
+        NSString *backTitle = @"选择相册";
+        UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithTitle:backTitle style:UIBarButtonItemStylePlain target:self action:@selector(navLeftBarButtonClick)];
+        [TZCommonTools configBarButtonItem:backItem tzImagePickerVc:tzImagePickerVc];
+        [tzImagePickerVc.childViewControllers firstObject].navigationItem.backBarButtonItem = backItem;
     }
-    /// 通过调整返回按钮X轴偏移量,把title移到屏幕外,实现隐藏返回按钮标题的效果
-    [[UIBarButtonItem appearance] setBackButtonTitlePositionAdjustment:UIOffsetMake(-100, 0)
-                                                         forBarMetrics:UIBarMetricsDefault];
-//=======
-//    self.navigationItem.title = _model.name;
-//    UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithTitle:tzImagePickerVc.cancelBtnTitleStr style:UIBarButtonItemStylePlain target:tzImagePickerVc action:@selector(cancelButtonClick)];
-//    [TZCommonTools configBarButtonItem:cancelItem tzImagePickerVc:tzImagePickerVc];
-//    self.navigationItem.rightBarButtonItem = cancelItem;
-//    if (tzImagePickerVc.navLeftBarButtonSettingBlock) {
-//        UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
-//        leftButton.frame = CGRectMake(0, 0, 44, 44);
-//        [leftButton addTarget:self action:@selector(navLeftBarButtonClick) forControlEvents:UIControlEventTouchUpInside];
-//        tzImagePickerVc.navLeftBarButtonSettingBlock(leftButton);
-//        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
-//    } else if (tzImagePickerVc.childViewControllers.count) {
-//        UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithTitle:[NSBundle tz_localizedStringForKey:@"Back"] style:UIBarButtonItemStylePlain target:self action:@selector(navLeftBarButtonClick)];
-//        [TZCommonTools configBarButtonItem:backItem tzImagePickerVc:tzImagePickerVc];
-//        [tzImagePickerVc.childViewControllers firstObject].navigationItem.backBarButtonItem = backItem;
-//    }
-//    _showTakePhotoBtn = _model.isCameraRoll && ((tzImagePickerVc.allowTakePicture && tzImagePickerVc.allowPickingImage) || (tzImagePickerVc.allowTakeVideo && tzImagePickerVc.allowPickingVideo));
-//    _authorizationLimited = _model.isCameraRoll && [[TZImageManager manager] isPHAuthorizationStatusLimited];
-//>>>>>>> 36cce2b71195295df09d1366513933d954f303cc
-    // [self resetCachedAssets];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didChangeStatusBarOrientationNotification:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
     self.operationQueue = [[NSOperationQueue alloc] init];
