@@ -16,6 +16,7 @@
 #import "TZImageManager.h"
 #import <sys/utsname.h>
 #import "TZVideoCropController.h"
+#import <PhotosUI/PhotosUI.h>
 
 
 @interface TZImagePickerController () {
@@ -63,7 +64,7 @@
     }
     self.navigationBar.barStyle = UIBarStyleBlack;
     self.navigationBar.translucent = YES;
-
+    self.showSelectMoreInfoBtn = YES;
     [TZImageManager manager].shouldFixOrientation = NO;
 
     // Default appearance, you can reset these after this method
@@ -1010,6 +1011,16 @@
         }];
     } else {
         [self callDelegateMethod];
+    }
+}
+
+- (void)selectedMoreMediasBtnClick {
+    if (@available(iOS 14, *)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[PHPhotoLibrary sharedPhotoLibrary] presentLimitedLibraryPickerFromViewController:self];
+        });
+    } else {
+        // Fallback on earlier versions
     }
 }
 

@@ -97,7 +97,6 @@ static CGFloat itemMargin = 5;
     } else {
         self.navigationItem.title = _model.name;
     }
-//<<<<<<< HEAD
     UIButton *rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
     rightButton.frame = CGRectMake(0, 0, 44, 44);
     rightButton.titleLabel.font = [UIFont systemFontOfSize:16];
@@ -108,7 +107,33 @@ static CGFloat itemMargin = 5;
         [rightButton setTitleColor:[UIColor colorWithRed:89/255.0 green:182/255.0 blue:215/255.0 alpha:1] forState:UIControlStateNormal];
     }
     [rightButton addTarget:tzImagePickerVc action:@selector(cancelButtonClick) forControlEvents:UIControlEventTouchUpInside];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:rightButton];
+    
+    UIButton *moreItemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    moreItemBtn.frame = CGRectMake(0, 0, 60, 44);
+    moreItemBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    if (tzImagePickerVc.selectMoreInfoText != nil) {
+        [moreItemBtn setTitle:tzImagePickerVc.selectMoreInfoText forState:UIControlStateNormal];
+    } else {
+        [moreItemBtn setTitle:@"选择素材" forState:UIControlStateNormal];
+    }
+    [moreItemBtn setTitleColor:TZCutomColor.blackColor forState:UIControlStateNormal];
+    [moreItemBtn addTarget:tzImagePickerVc action:@selector(selectedMoreMediasBtnClick)
+          forControlEvents:UIControlEventTouchUpInside];
+    
+    UIBarButtonItem *moreItem = [[UIBarButtonItem alloc] initWithCustomView:moreItemBtn];
+    UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithCustomView:rightButton];
+
+    if (@available(iOS 14, *)) {
+        PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatusForAccessLevel:PHAccessLevelReadWrite];
+        if(status == PHAuthorizationStatusLimited && tzImagePickerVc.showSelectMoreInfoBtn) {
+            self.navigationItem.rightBarButtonItems = @[cancelItem, moreItem];
+        } else {
+            self.navigationItem.rightBarButtonItems = @[cancelItem];
+        }
+    } else {
+        self.navigationItem.rightBarButtonItems = @[cancelItem];
+    }
+
     if (tzImagePickerVc.backImage) {
         [[UINavigationBar appearance] setBackIndicatorImage:tzImagePickerVc.backImage];
         [[UINavigationBar appearance] setBackIndicatorTransitionMaskImage:tzImagePickerVc.backImage];
@@ -125,6 +150,13 @@ static CGFloat itemMargin = 5;
         UIBarButtonItem *backItem = [[UIBarButtonItem alloc] initWithTitle:backTitle style:UIBarButtonItemStylePlain target:self action:@selector(navLeftBarButtonClick)];
         [TZCommonTools configBarButtonItem:backItem tzImagePickerVc:tzImagePickerVc];
         [tzImagePickerVc.childViewControllers firstObject].navigationItem.backBarButtonItem = backItem;
+    }
+    if (_model.isCameraRoll) {
+        if (tzImagePickerVc.allowPickingImage && tzImagePickerVc.allowTakePicture) {
+            _showTakePhotoBtn = YES;
+        } else if(tzImagePickerVc.allowPickingVideo && tzImagePickerVc.allowTakeVideo) {
+            _showTakePhotoBtn = YES;
+        }
     }
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didChangeStatusBarOrientationNotification:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
@@ -1302,18 +1334,43 @@ static CGFloat itemMargin = 5;
 }
 
 - (void)checkSelectedModels {
+    
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-    NSArray *selectedModels = tzImagePickerVc.selectedModels;
-    NSMutableSet *selectedAssets = [NSMutableSet setWithCapacity:selectedModels.count];
-    for (TZAssetModel *model in selectedModels) {
-        [selectedAssets addObject:model.asset];
+    NSMutableArray *selectedModels = tzImagePickerVc.selectedModels;
+
+    NSMutableArray *checkSelectedModels = [[NSMutableArray alloc] init];
+    for (int j = 0; j < selectedModels.count; j ++) {
+        TZAssetModel *selectedModel = selectedModels[j];
+        BOOL didFind = NO;
+        
+        for (int i = 0; i < _models.count; i ++) {
+            TZAssetModel *orgModel = _models[i];
+            if ([orgModel.asset.localIdentifier isEqualToString:selectedModel.asset.localIdentifier]) {
+                didFind = YES;
+                break;
+            }
+        }
+        if (didFind) {
+            [checkSelectedModels addObject:selectedModel];
+        }
     }
+    tzImagePickerVc.selectedModels = checkSelectedModels;
+    
+    NSMutableSet *selectedAssets = [NSMutableSet setWithCapacity:checkSelectedModels.count];
+    NSMutableArray *selectedAssetArray = [[NSMutableArray alloc]init];
+    for (TZAssetModel *model in checkSelectedModels) {
+        [selectedAssets addObject:model.asset];
+        [selectedAssetArray addObject:model.asset];
+    }
+    tzImagePickerVc.selectedAssets = selectedAssetArray;
+
     for (TZAssetModel *model in _models) {
         model.isSelected = NO;
         if ([selectedAssets containsObject:model.asset]) {
             model.isSelected = YES;
         }
     }
+    [self refreshBottomToolBarStatus];
 }
 
 /// 选中/取消选中某张照片

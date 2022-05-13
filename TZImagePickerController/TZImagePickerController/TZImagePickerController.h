@@ -346,6 +346,10 @@ typedef NS_ENUM(NSInteger, TSExportVideoMode) {
 @property (nonatomic) int couldQuickExportVideoMaxSeconds;
 /// 选择视频弹窗（默认快速导出+编辑后导出）
 @property (nonatomic) TSExportVideoMode exportVideoMode;
+/// 选择更多
+@property (nonatomic, copy) NSString *selectMoreInfoText;
+/// 是否显示更多信息入口（默认YES）
+@property (nonatomic) BOOL showSelectMoreInfoBtn;
 
 // MARK: end
 
@@ -358,6 +362,7 @@ typedef NS_ENUM(NSInteger, TSExportVideoMode) {
 
 #pragma mark -
 - (void)cancelButtonClick;
+- (void)selectedMoreMediasBtnClick;
 
 // For method annotations, see the corresponding method in TZImagePickerControllerDelegate / 方法注释见TZImagePickerControllerDelegate中对应方法
 @property (nonatomic, copy) void (^didFinishPickingPhotosHandle)(NSArray<UIImage *> *photos,NSArray *assets,BOOL isSelectOriginalPhoto);
