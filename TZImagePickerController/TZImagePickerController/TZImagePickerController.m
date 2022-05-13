@@ -86,7 +86,7 @@
 //    self.modalPresentationStyle = UIModalPresentationFullScreen;
     
     self.navigationBar.barTintColor = [UIColor colorWithRed:(34/255.0) green:(34/255.0)  blue:(34/255.0) alpha:1.0];
-    self.navigationBar.tintColor = [UIColor whiteColor];
+    self.navigationBar.tintColor = TZCutomColor.blackColor;
     self.automaticallyAdjustsScrollViewInsets = NO;
     if (self.needShowStatusBar) [UIApplication sharedApplication].statusBarHidden = NO;
 }
@@ -554,10 +554,10 @@
     self.timeout = 30;
     self.photoWidth = 828.0;
     self.photoPreviewMaxWidth = 600;
-    self.naviTitleColor = [UIColor whiteColor];
+    self.naviTitleColor = TZCutomColor.blackColor;
     self.naviTitleFont = [UIFont systemFontOfSize:17];
     self.barItemTextFont = [UIFont systemFontOfSize:15];
-    self.barItemTextColor = [UIColor whiteColor];
+    self.barItemTextColor = [UIColor blackColor];
     self.allowPreview = YES;
     // 2.2.26版本，不主动缩放图片，降低内存占用
     self.notScaleImage = YES;
