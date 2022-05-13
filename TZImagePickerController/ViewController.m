@@ -8,7 +8,7 @@
 
 #import "ViewController.h"
 #import "TZImagePickerController.h"
-#import "UIView+Layout.h"
+#import "UIView+TZLayout.h"
 #import "TZTestCell.h"
 #import <Photos/Photos.h>
 #import "LxGridViewFlowLayout.h"
@@ -21,11 +21,13 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "FLAnimatedImage.h"
 #import "TZImageUploadOperation.h"
+#import "TZVideoEditedPreviewController.h"
 
 @interface ViewController ()<TZImagePickerControllerDelegate,UICollectionViewDataSource,UICollectionViewDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate> {
     NSMutableArray *_selectedPhotos;
     NSMutableArray *_selectedAssets;
     BOOL _isSelectOriginalPhoto;
+    BOOL _isAllowEditVideo;
     
     CGFloat _itemWH;
     CGFloat _margin;
@@ -114,6 +116,9 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         self.scrollView.contentSize = CGSizeMake(0, contentSizeH + 5);
     });
+    if (self.scrollView.tz_height + 80 > self.view.tz_height) {
+        self.scrollView.tz_height = self.view.tz_height - 80;
+    }
     
     _margin = 4;
     _itemWH = (self.view.tz_width - 2 * _margin - 4) / 3 - _margin;
@@ -132,9 +137,13 @@
         return _selectedPhotos.count;
     }
     if (!self.allowPickingMuitlpleVideoSwitch.isOn) {
-        for (PHAsset *asset in _selectedAssets) {
-            if (asset.mediaType == PHAssetMediaTypeVideo) {
-                return _selectedPhotos.count;
+        if (_isAllowEditVideo) {
+            return 1;
+        } else {
+            for (PHAsset *asset in _selectedAssets) {
+                if (asset.mediaType == PHAssetMediaTypeVideo) {
+                    return _selectedPhotos.count;
+                }
             }
         }
     }
@@ -150,7 +159,9 @@
         cell.gifLable.hidden = YES;
     } else {
         cell.imageView.image = _selectedPhotos[indexPath.item];
-        cell.asset = _selectedAssets[indexPath.item];
+        if (!_isAllowEditVideo) {
+            cell.asset = _selectedAssets[indexPath.item];
+        }
         cell.deleteBtn.hidden = NO;
     }
     if (!self.allowPickingGifSwitch.isOn) {
@@ -193,6 +204,11 @@
         } else {
             [self pushTZImagePickerController];
         }
+    } else if (_isAllowEditVideo && [_selectedAssets[indexPath.item] isKindOfClass:[NSURL class]]) { // preview edited video / 预览编辑后的视频
+        TZVideoEditedPreviewController *vc = [[TZVideoEditedPreviewController alloc] init];
+        vc.videoURL = _selectedAssets[indexPath.item];
+        vc.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:vc animated:YES completion:nil];
     } else { // preview photos or video / 预览照片或者视频
         PHAsset *asset = _selectedAssets[indexPath.item];
         BOOL isVideo = NO;
@@ -260,8 +276,10 @@
     if (self.maxCountTF.text.integerValue <= 0) {
         return;
     }
-    TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCountTSType:self.maxCountTF.text.integerValue columnNumber:self.columnNumberTF.text.integerValue delegate:self pushPhotoPickerVc:YES square:YES shouldPick: YES topTitle:@"图片裁剪"];
-    // imagePickerVc.navigationBar.translucent = NO;
+    // 设置languageBundle以使用其它语言，必须在TZImagePickerController初始化前设置 / Set languageBundle to use other language
+    // [TZImagePickerConfig sharedInstance].languageBundle = [NSBundle bundleWithPath:[[NSBundle mainBundle] pathForResource:@"tz-ru" ofType:@"lproj"]];
+
+    TZImagePickerController *imagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:self.maxCountTF.text.integerValue columnNumber:self.columnNumberTF.text.integerValue delegate:self pushPhotoPickerVc:YES];
     
 #pragma mark - 五类个性化设置，这些参数都可以不传，此时会走默认设置
     imagePickerVc.isSelectOriginalPhoto = _isSelectOriginalPhoto;
@@ -273,6 +291,10 @@
     imagePickerVc.allowTakePicture = self.showTakePhotoBtnSwitch.isOn; // 在内部显示拍照按钮
     imagePickerVc.allowTakeVideo = self.showTakeVideoBtnSwitch.isOn;   // 在内部显示拍视频按
     imagePickerVc.videoMaximumDuration = 10; // 视频最大拍摄时间
+    imagePickerVc.allowEditVideo = YES; // 允许编辑视频
+    // imagePickerVc.saveEditedVideoToCollection = YES; // 编辑后的视频是否自动保存到相册
+    // imagePickerVc.maxCropVideoDuration = 30; // 裁剪视频的最大时长
+    // imagePickerVc.presetName = AVAssetExportPresetMediumQuality // 编辑后的视频的导出质量
     [imagePickerVc setUiImagePickerControllerSettingBlock:^(UIImagePickerController *imagePickerController) {
         imagePickerController.videoQuality = UIImagePickerControllerQualityTypeHigh;
     }];
@@ -307,10 +329,24 @@
     // imagePickerVc.navigationBar.barTintColor = [UIColor greenColor];
     // imagePickerVc.oKButtonTitleColorDisabled = [UIColor lightGrayColor];
     // imagePickerVc.oKButtonTitleColorNormal = [UIColor greenColor];
+    // imagePickerVc.barItemTextColor = [UIColor blackColor];
     // imagePickerVc.navigationBar.translucent = NO;
+
 //    imagePickerVc.iconThemeColor = [UIColor colorWithRed:31 / 255.0 green:185 / 255.0 blue:34 / 255.0 alpha:1.0];
     imagePickerVc.iconThemeColor = UIColor.orangeColor;
     imagePickerVc.selectImage = [UIImage imageNamed:@"msg_box_choose_now"];
+
+    // [imagePickerVc.navigationBar setTitleTextAttributes:@{NSForegroundColorAttributeName : [UIColor blackColor]}];
+    // imagePickerVc.navigationBar.tintColor = [UIColor blackColor];
+    // if (@available(iOS 13.0, *)) {
+    //     UINavigationBarAppearance *barAppearance = [[UINavigationBarAppearance alloc] init];
+    //     barAppearance.backgroundColor = imagePickerVc.navigationBar.barTintColor;
+    //     barAppearance.titleTextAttributes = imagePickerVc.navigationBar.titleTextAttributes;
+    //     imagePickerVc.navigationBar.standardAppearance = barAppearance;
+    //     imagePickerVc.navigationBar.scrollEdgeAppearance = barAppearance;
+    // }
+    
+    imagePickerVc.iconThemeColor = [UIColor colorWithRed:31 / 255.0 green:185 / 255.0 blue:34 / 255.0 alpha:1.0];
     imagePickerVc.showPhotoCannotSelectLayer = YES;
     imagePickerVc.cannotSelectLayerColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8];
     [imagePickerVc setPhotoPickerPageUIConfigBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
@@ -348,6 +384,11 @@
     NSInteger left = 30;
     NSInteger widthHeight = self.view.tz_width - 2 * left;
     NSInteger top = (self.view.tz_height - widthHeight) / 2;
+    if ([TZCommonTools tz_isLandscape]) {
+        top = 30;
+        widthHeight = self.view.tz_height - 2 * left;
+        left = (self.view.tz_width - widthHeight) / 2;
+    }
     imagePickerVc.cropRect = CGRectMake(left, top, widthHeight, widthHeight);
     imagePickerVc.scaleAspectFillCrop = YES;
     // 设置横屏下的裁剪尺寸
@@ -583,7 +624,7 @@
     for (PHAsset *phAsset in assets) {
         NSLog(@"location:%@",phAsset.location);
     }
-    
+
     // 3. 获取原图的示例，用队列限制最大并发为1，避免内存暴增
     self.operationQueue = [[NSOperationQueue alloc] init];
     self.operationQueue.maxConcurrentOperationCount = 1;
@@ -600,9 +641,32 @@
     }
 }
 
-- (void)imagePickerControllerDidClickTakePhotoBtn:(TZImagePickerController *)picker {
-    NSLog(@"点击了相册按钮");
+/// 如果用户选择了某张照片下面的代理方法会被执行
+/// 如果isSelectOriginalPhoto为YES，表明用户选择了原图
+/// 你可以通过一个asset获得原图，通过这个方法：[[TZImageManager manager] getOriginalPhotoWithAsset:completion:]
+- (void)imagePickerController:(TZImagePickerController *)picker didSelectAsset:(PHAsset *)asset photo:(UIImage *)photo isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
+//    [_selectedAssets addObject:asset];
+//    [_selectedPhotos addObject:photo];
+//    [self.collectionView reloadData];
 }
+
+/// 如果用户取消选择了某张照片下面的代理方法会被执行
+/// 如果isSelectOriginalPhoto为YES，表明用户选择了原图
+/// 你可以通过一个asset获得原图，通过这个方法：[[TZImageManager manager] getOriginalPhotoWithAsset:completion:]
+- (void)imagePickerController:(TZImagePickerController *)picker didDeselectAsset:(PHAsset *)asset photo:(UIImage *)photo isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
+//    int index = -1;
+//    for (int i = 0; i < _selectedAssets.count; i++) {
+//        if ([_selectedAssets[i] isEqual:asset]) {
+//            index = i;
+//        }
+//    }
+//    if (index > -1) {
+//        [_selectedAssets removeObjectAtIndex:index];
+//        [_selectedPhotos removeObjectAtIndex:index];
+//        [self.collectionView reloadData];
+//    }
+}
+
 // If user picking a video and allowPickingMultipleVideo is NO, this callback will be called.
 // If allowPickingMultipleVideo is YES, will call imagePickerController:didFinishPickingPhotos:sourceAssets:isSelectOriginalPhoto:
 // 如果用户选择了一个视频且allowPickingMultipleVideo是NO，下面的代理方法会被执行
@@ -621,6 +685,31 @@
     }];
     [_collectionView reloadData];
     // _collectionView.contentSize = CGSizeMake(0, ((_selectedPhotos.count + 2) / 3 ) * (_margin + _itemWH));
+}
+
+// If allowEditVideo is YES and allowPickingMultipleVideo is NO, When user picking a video, this callback will be called.
+// If allowPickingMultipleVideo is YES, video editing is not supported, will call imagePickerController:didFinishPickingPhotos:sourceAssets:isSelectOriginalPhoto:
+// 当allowEditVideo是YES且allowPickingMultipleVideo是NO是，如果用户选择了一个视频，下面的代理方法会被执行
+// 如果allowPickingMultipleVideo是YES，则不支持编辑视频，将会调用imagePickerController:didFinishPickingPhotos:sourceAssets:isSelectOriginalPhoto:
+- (void)imagePickerController:(TZImagePickerController *)picker didFinishPickingAndEditingVideo:(UIImage *)coverImage outputPath:(NSString *)outputPath error:(NSString *)errorMsg {
+    _isAllowEditVideo = YES;
+    self->_selectedPhotos = [NSMutableArray arrayWithArray:@[coverImage]];
+    self->_selectedAssets = [NSMutableArray arrayWithArray:@[[NSURL fileURLWithPath:outputPath]]];
+    if (outputPath) {
+        // NSData *data = [NSData dataWithContentsOfFile:outputPath];
+        NSLog(@"视频导出到本地完成,outputPath为:%@",outputPath);
+        // Export completed, send video here, send by outputPath or NSData
+        // 导出完成，在这里写上传代码，通过路径或者通过NSData上传
+    } else {
+        NSLog(@"视频导出失败:%@",errorMsg);
+    }
+    [self.collectionView reloadData];
+}
+
+// If user fail to save edited, this callback will be called.
+// 如果用户保存编辑好的视频失败，将会调用
+- (void)imagePickerController:(TZImagePickerController *)picker didFailToSaveEditedVideoWithError:(NSError *)error {
+    NSLog(@"编辑后的视频自动保存到相册失败:%@",error.description);
 }
 
 // If user picking a gif image and allowPickingMultipleVideo is NO, this callback will be called.
@@ -648,7 +737,7 @@
 
 // Decide asset show or not't
 // 决定asset显示与否
-- (BOOL)isAssetCanSelect:(PHAsset *)asset {
+- (BOOL)isAssetCanBeDisplayed:(PHAsset *)asset {
     /*
     switch (asset.mediaType) {
         case PHAssetMediaTypeVideo: {
@@ -658,8 +747,40 @@
         } break;
         case PHAssetMediaTypeImage: {
             // 图片尺寸
-            if (phAsset.pixelWidth > 3000 || phAsset.pixelHeight > 3000) {
-                // return NO;
+            if (asset.pixelWidth > 3000 || asset.pixelHeight > 3000) {
+                 return NO;
+            }
+            return YES;
+        } break;
+        case PHAssetMediaTypeAudio:
+            return NO;
+            break;
+        case PHAssetMediaTypeUnknown:
+            return NO;
+            break;
+        default: break;
+    }
+     */
+    return YES;
+}
+
+// Decide asset can be selected
+// 决定照片能否被选中
+- (BOOL)isAssetCanBeSelected:(PHAsset *)asset {
+    /*
+    switch (asset.mediaType) {
+        case PHAssetMediaTypeVideo: {
+            // 视频时长
+            // NSTimeInterval duration = phAsset.duration;
+            return NO;
+        } break;
+        case PHAssetMediaTypeImage: {
+            // 图片尺寸
+            if (asset.pixelWidth > 3000 || asset.pixelHeight > 3000) {
+                UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"不支持选择超大图片" message:nil preferredStyle:UIAlertControllerStyleAlert];
+                [alertController addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+                [self.presentedViewController presentViewController:alertController animated:YES completion:nil];
+                return NO;
             }
             return YES;
         } break;
