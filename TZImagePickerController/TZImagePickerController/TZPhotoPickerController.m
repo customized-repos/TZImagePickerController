@@ -709,9 +709,18 @@ static CGFloat itemMargin = 5;
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     // take a photo / 去拍照
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-
     if (indexPath.item == [self getTakePhotoCellIndex]) {
-        [self takePhoto]; return;
+        /// 拍视频：如实现了imagePickerControllerDidClickTakePhotoBtn即调用自定拍摄页面，否则使用系统页面
+        if (tzImagePickerVc.takeVideo) {
+            if([tzImagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerControllerDidClickTakePhotoBtn:)]) {
+                [tzImagePickerVc.pickerDelegate imagePickerControllerDidClickTakePhotoBtn:tzImagePickerVc];
+            } else {
+                [self takePhoto];
+            }
+        } else {
+            [self takePhoto];
+        }
+        return;
     }
     // preview phote or video / 预览照片或视频
     NSInteger index = indexPath.item;
