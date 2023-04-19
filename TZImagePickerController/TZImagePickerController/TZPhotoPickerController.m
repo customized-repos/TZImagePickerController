@@ -728,6 +728,13 @@ static CGFloat itemMargin = 5;
         index -= [self getAllCellCount] - _models.count;
     }
     TZAssetModel *model = _models[index];
+    
+//    TZPhotoPreviewController *photoPreviewVc = [[TZPhotoPreviewController alloc] init];
+//    photoPreviewVc.currentIndex = index;
+//    photoPreviewVc.models = _models;
+//    [self pushPhotoPrevireViewController:photoPreviewVc];
+//    
+//    return;
     if (model.type == TZAssetModelMediaTypeVideo && !tzImagePickerVc.allowPickingMultipleVideo) {
         if (tzImagePickerVc.selectedModels.count > 0) {
             TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
@@ -768,20 +775,87 @@ static CGFloat itemMargin = 5;
                 PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
                 /// 设置为当前版本，包含用户编辑后信息，比如滤镜
                 options.version = PHVideoRequestOptionsVersionCurrent;
+//                options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+
+                NSLog(@"%@", NSHomeDirectory());
+                
                 options.deliveryMode = PHVideoRequestOptionsDeliveryModeHighQualityFormat;
+
                 options.networkAccessAllowed = YES;
+                
                 [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-                    if ([asset isKindOfClass:[AVURLAsset class]]) {
-                        [self AVURLAssetExportWithAsset:(AVURLAsset*)asset sourePHAsset:model.asset soureExpVideoPath:nil showProgressScale: showProgressScale];
-                    } else if([asset isKindOfClass:[AVComposition class]]) {
-                        AVCompositionExpBlock((AVComposition*)asset);
+                    CGFloat totalSize = 0;
+                    AVAssetTrack *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+                    for (AVAssetTrack *videoTrack in videoTracks) {
+                        totalSize += videoTrack.estimatedDataRate * CMTimeGetSeconds(asset.duration) / 8;
+                    }
+                    
+                    AVAssetTrack *audioTracks = [asset tracksWithMediaType:AVMediaTypeAudio];
+                    for (AVAssetTrack *audioTrack in audioTracks) {
+                        totalSize += audioTrack.estimatedDataRate * CMTimeGetSeconds(asset.duration) / 8;
+                    }
+                    totalSize = totalSize / 1000 / 1000;
+                    
+                    NSLog(@"视频体积 %f", totalSize);
+
+                    BOOL directExport = NO;
+                    if(tzImagePickerVc.directExportFileSizeMB < 0) {
+                        directExport = YES;
                     } else {
-                        // 允许用户操作
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            tzImagePickerVc.view.userInteractionEnabled = YES;
-                            [tzImagePickerVc hideProgressHUD];
-                            [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
-                        });
+                        if(totalSize <= tzImagePickerVc.directExportFileSizeMB) {
+                            directExport = YES;
+                        }
+                    }
+                    
+                    if(directExport) {
+                        NSLog(@"直接导出");
+                        /// 直接导出
+                        AVURLAsset *urlAsset = (AVURLAsset*)asset;
+                        NSString *outputPath = urlAsset.URL.absoluteString;
+                        outputPath = [outputPath stringByReplacingOccurrencesOfString:@"file://" withString:@""];
+                        
+                        NSString *soureExpVideoPath = nil;
+                        
+                        NSString *exportFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@",@"exportVideo",@"mp4"]];
+                        NSLog(@"exportFilePath:%@", exportFilePath);
+                        
+                        // 移除上一个
+                        if ([[NSFileManager defaultManager] fileExistsAtPath:exportFilePath]) {
+                            NSError *removeErr;
+                            [[NSFileManager defaultManager] removeItemAtPath:exportFilePath error: &removeErr];
+                        }
+                        /// 如果有源视频先删除源视频
+                        if ([[NSFileManager defaultManager] fileExistsAtPath:soureExpVideoPath]) {
+                            NSError *removeErr;
+                            [[NSFileManager defaultManager] removeItemAtPath:soureExpVideoPath error: &removeErr];
+                        }
+                        // 把文件移动到同一的路径下，修改为同一的名称。方便后续的操作
+                        NSError *moveErr;
+                        [[NSFileManager defaultManager] copyItemAtPath:outputPath toPath:exportFilePath error:&moveErr];
+                        NSLog(@"moveErr: %@", moveErr);
+                        if (moveErr != nil) {
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                tzImagePickerVc.view.userInteractionEnabled = YES;
+                                [tzImagePickerVc hideProgressHUD];
+                                [tzImagePickerVc showAlertWithTitle:@"视频出问题啦，请手动编辑"];
+                            });
+                        } else {
+                            /// 导出封面
+                            [self getJpegCoverFormAsset:model.asset videoExportFilePath:exportFilePath];
+                        }
+                    } else {
+                        if ([asset isKindOfClass:[AVURLAsset class]]) {
+                            [self AVURLAssetExportWithAsset:(AVURLAsset*)asset sourePHAsset:model.asset soureExpVideoPath:nil showProgressScale: showProgressScale];
+                        } else if([asset isKindOfClass:[AVComposition class]]) {
+                            AVCompositionExpBlock((AVComposition*)asset);
+                        } else {
+                            // 允许用户操作
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                tzImagePickerVc.view.userInteractionEnabled = YES;
+                                [tzImagePickerVc hideProgressHUD];
+                                [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
+                            });
+                        }
                     }
                 }];
             };

@@ -37,13 +37,51 @@
        return self;
 }
 
+/// 最低码率
+- (int)standRateByVideoTrack:(AVAssetTrack*)videoTrack {
+    /// 压缩视频最低码率
+    int standRate = 0;
+    if (_videoQuality == VideoQualityTypeHigh) {
+        standRate = 3500 * 1000;
+    }
+    else if (_videoQuality == VideoQualityTypeStandard) {
+        standRate = 2300 * 1000;
+    }
+    else {
+        standRate = 1000 * 1000;
+    }
+    return standRate;
+}
+
+- (CGSize)standVideoSize {
+    CGSize refSize;
+    switch (_videoQuality) {
+        case VideoQualityTypeHigh:
+            refSize = CGSizeMake(1920, 1080);
+            break;
+        case VideoQualityTypeStandard:
+            refSize = CGSizeMake(1280, 720);
+            break;
+        case VideoQualityTypeLow:
+            refSize = CGSizeMake(640, 480);
+            break;
+    }
+    return refSize;
+}
+
 - (int)calculateAverageBitRateByVideoTrack:(AVAssetTrack*)videoTrack videoSize:(CGSize)videoSize  {
-    CGFloat maxFrameRate = (CGFloat)((int)videoTrack.minFrameDuration.timescale / videoTrack.minFrameDuration.value);
-    CGSize naturalSize = videoTrack.naturalSize;
-    //假设帧率减小清晰度不变的情况下(增加码率)，根据原视频质量减小码率
-    CGFloat factor = fmin((videoSize.width * videoSize.height) / (naturalSize.width * naturalSize.height) * maxFrameRate / (_videoFrameRate > 0 ? _videoFrameRate : maxFrameRate), 1.0);
-    CGFloat ouputVideoBitRate = factor * (CGFloat)videoTrack.estimatedDataRate * [self getExtraCompressionFactorByVideoTrack:videoTrack videoSize:videoSize];
-    return (int)ouputVideoBitRate;
+    int standRate = [self standRateByVideoTrack:videoTrack];
+    if (videoTrack.estimatedDataRate < standRate) {
+        return videoTrack.estimatedDataRate;
+    } else {
+        return standRate;
+    }
+//    CGFloat maxFrameRate = (CGFloat)((int)videoTrack.minFrameDuration.timescale / videoTrack.minFrameDuration.value);
+//    CGSize naturalSize = videoTrack.naturalSize;
+//    //假设帧率减小清晰度不变的情况下(增加码率)，根据原视频质量减小码率
+//    CGFloat factor = fmin((videoSize.width * videoSize.height) / (naturalSize.width * naturalSize.height) * maxFrameRate / (_videoFrameRate > 0 ? _videoFrameRate : maxFrameRate), 1.0);
+//    CGFloat ouputVideoBitRate = factor * (CGFloat)videoTrack.estimatedDataRate * [self getExtraCompressionFactorByVideoTrack:videoTrack videoSize:videoSize];
+//    return (int)ouputVideoBitRate;
 }
 
 - (CGFloat)getExtraCompressionFactorByVideoTrack:(AVAssetTrack *)videoTrack videoSize:(CGSize)videoSize  {
@@ -53,18 +91,7 @@
 
 - (CGSize)getVideoSizeByVideoTrack:(AVAssetTrack *)videoTrack  {
     CGSize naturalSize = videoTrack.naturalSize;
-    CGSize refSize;
-    switch (_videoQuality) {
-        case VideoQualityTypeHigh:
-            refSize = CGSizeMake(1280, 720);
-            break;
-        case VideoQualityTypeStandard:
-            refSize = CGSizeMake(640, 480);
-            break;
-        case VideoQualityTypeLow:
-            refSize = CGSizeMake(320, 180);
-            break;
-    }
+    CGSize refSize = [self standVideoSize];
     // 没有达到该质量，直接返回
     if (naturalSize.width * naturalSize.height < refSize.width * refSize.height) {
         return naturalSize;
@@ -82,6 +109,14 @@
     }
 }
 
+//- (BOOL)shouldCompress:(AVAssetTrack *)videoTrack {
+//    CGSize naturalSize = videoTrack.naturalSize;
+//    CGSize refSize = [self standVideoSize];
+//
+//    CGFloat largeNatSide = fmax(naturalSize.width, naturalSize.height);
+//    CGFloat largeRefSide = fmax(refSize.width, refSize.height);
+//    return NO;
+//}
 @end
 
 @implementation CompressHelper

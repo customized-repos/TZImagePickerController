@@ -13,9 +13,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef enum : NSUInteger {
-    VideoQualityTypeHigh,//>= 1280 * 720
-    VideoQualityTypeStandard,//>= 640 * 480
-    VideoQualityTypeLow//320 * 180
+    VideoQualityTypeHigh,//>= 1920, 1080
+    VideoQualityTypeStandard,//>= 1280, 720
+    VideoQualityTypeLow//640, 480
 } VideoQualityType;
 
 @interface CompressSetting : NSObject

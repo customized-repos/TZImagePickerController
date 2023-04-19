@@ -180,6 +180,9 @@
 /// 默认是NO，如果设置为YES，导出视频时会修正转向（慎重设为YES，可能导致部分安卓下拍的视频导出失败）
 @property (assign, nonatomic) BOOL needFixComposition;
 
+/// 快速导出-原视频直接导出最大文件体积（默认最大5MB，设置为-1即忽略体积限制直接导出，⚠️注意视频体积可能会很大）
+@property (nonatomic, assign) NSInteger directExportFileSizeMB;
+
 /// The photos user have selected
 /// 用户选中过的图片数组
 @property (nonatomic, strong) NSMutableArray *selectedAssets;

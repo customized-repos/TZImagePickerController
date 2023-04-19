@@ -202,6 +202,7 @@
     self = [super initWithRootViewController:albumPickerVc];
     if (self) {
         self.maxImagesCount = maxImagesCount > 0 ? maxImagesCount : 9; // Default is 9 / 默认最大可选9张图片
+        self.directExportFileSizeMB = 5;
         self.pickerDelegate = delegate;
         self.selectedModels = [NSMutableArray array];
         self.shouldSetCoverImage = YES;
@@ -262,6 +263,7 @@
     self = [super initWithRootViewController:albumPickerVc];
     if (self) {
         self.maxImagesCount = maxImagesCount > 0 ? maxImagesCount : 9; // Default is 9 / 默认最大可选9张图片
+        self.directExportFileSizeMB = 5;
         self.pickerDelegate = delegate;
         self.selectedModels = [NSMutableArray array];
         self.shouldSetCoverImage = YES;
@@ -351,6 +353,7 @@
     self = [super initWithRootViewController:previewVc];
     if (self) {
         self.maxImagesCount = 1;
+        self.directExportFileSizeMB = 5;
         self.allowPickingImage = YES;
         self.allowCrop = YES;
         self.selectedAssets = [NSMutableArray arrayWithArray:@[asset]];
@@ -385,6 +388,7 @@
     self = [super initWithRootViewController:albumPickerVc];
     if (self) {
         self.maxImagesCount = maxImagesCount > 0 ? maxImagesCount : 9; // Default is 9 / 默认最大可选9张图片
+        self.directExportFileSizeMB = 5;
         self.pickerDelegate = delegate;
         self.selectedModels = [NSMutableArray array];
         self.shouldSetCoverImage = YES;
@@ -447,6 +451,7 @@
     self = [super initWithRootViewController:albumPickerVc];
     if (self) {
         self.maxImagesCount = maxImagesCount > 0 ? maxImagesCount : 9; // Default is 9 / 默认最大可选9张图片
+        self.directExportFileSizeMB = 5;
         self.pickerDelegate = delegate;
         self.selectedModels = [NSMutableArray array];
         self.shouldSetCoverImage = YES;
