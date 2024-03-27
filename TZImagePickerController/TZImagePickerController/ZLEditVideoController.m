@@ -280,6 +280,9 @@
     [self.getImageCacheQueue cancelAllOperations];
     [self stopTimer];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    self.playerLayer.delegate = nil;
+    self.playerLayer.player = nil;
+    [self.playerLayer removeFromSuperlayer];
     NSLog(@"---- %s", __FUNCTION__);
 }
 
@@ -362,6 +365,7 @@
 }
 - (void)rightButtonClick:(UIButton *)btn {
     btn.userInteractionEnabled = NO;
+    self.indicatorLine.layer.speed = 0;
     [self stopTimer];
     __weak typeof(self) weakSelf = self;
     TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
@@ -388,9 +392,6 @@
                     [weakSelf stopTimer];
                     [weakSelf.getImageCacheQueue cancelAllOperations];
                     [weakSelf.playerLayer.player pause];
-                    weakSelf.playerLayer.delegate = nil;
-                    weakSelf.playerLayer.player = nil;
-                    [weakSelf.playerLayer removeFromSuperlayer];
                     weakSelf.playerLayer = nil;
                     if (weakSelf.coverImageBlock) {
                         weakSelf.coverImageBlock(coverImage, videoPath);
@@ -420,10 +421,6 @@
                     [weakSelf stopTimer];
                     [weakSelf.getImageCacheQueue cancelAllOperations];
                     [weakSelf.playerLayer.player pause];
-                    weakSelf.playerLayer.delegate = nil;
-                    weakSelf.playerLayer.player = nil;
-                    [weakSelf.playerLayer removeFromSuperlayer];
-                    weakSelf.playerLayer = nil;
                     weakSelf.coverImageBlock(coverImage, [NSURL fileURLWithPath:exportFilePath]);
                 }
             }
@@ -636,6 +633,8 @@
         self.generator.requestedTimeToleranceBefore = kCMTimeZero;
         self.generator.requestedTimeToleranceAfter = kCMTimeZero;
         self.generator.apertureMode = AVAssetImageGeneratorApertureModeProductionAperture;
+        self.generator.maximumSize = CGSizeMake(240, 160);
+
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completion) {
                 completion();
